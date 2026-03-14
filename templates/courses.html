@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+    <h2>Read Courses</h2>
+    <p>Use filters/sorting below to visualize your query and browse results.</p>
+    <div class="danger-zone">
+        <span>Reset all data:</span>
+        <div class="reset-wrap">
+            <button type="button" class="danger-link-button" onclick="toggleResetConfirm(event)">Reset Data</button>
+            <div id="reset-confirm-popover" class="floating-confirm hidden">
+                <form method="post" action="{{ url_for('reset_courses') }}" class="inline-form preserve-scroll-form">
+                    <input type="hidden" name="confirm_reset" value="Y">
+                    <button type="submit" class="confirm-btn">Confirm</button>
+                    <button type="button" class="cancel-btn" onclick="closeResetConfirm()">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="panel">
+    <h3>Query Controls</h3>
+    <form method="get" action="{{ url_for('read_courses') }}" class="form-grid">
+        <label>Department
+            <input type="text" name="department" value="{{ filters.department }}">
+        </label>
+
+        <label>Semester Offered
+            <select name="semester_offered">
+                <option value="">(Any)</option>
+                {% for semester in valid_semesters %}
+                    <option value="{{ semester }}" {% if filters.semester_offered == semester %}selected{% endif %}>
+                        {{ semester }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>Keyword in Description
+            <input type="text" name="keyword" value="{{ filters.keyword }}">
+        </label>
+
+        <label>Sort By
+            <select name="sort_by">
+                <option value="id" {% if filters.sort_by == 'id' %}selected{% endif %}>id</option>
+                <option value="credits" {% if filters.sort_by == 'credits' %}selected{% endif %}>credits</option>
+                <option value="fce_hours" {% if filters.sort_by == 'fce_hours' %}selected{% endif %}>fce_hours</option>
+            </select>
+        </label>
+
+        <label>Sort Order
+            <select name="sort_order">
+                <option value="asc" {% if filters.sort_order == 'asc' %}selected{% endif %}>ASC</option>
+                <option value="desc" {% if filters.sort_order == 'desc' %}selected{% endif %}>DESC</option>
+            </select>
+        </label>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="mini_only" value="1" {% if filters.mini_only %}checked{% endif %}>
+            Mini courses only (mini_course = Y)
+        </label>
+
+        <div class="actions">
+            <button type="submit">Apply Query</button>
+            <a class="button-muted" href="{{ url_for('read_courses') }}">Reset</a>
+        </div>
+    </form>
+</section>
+
+<section class="panel">
+    <h3>Query Visualization</h3>
+    <p class="equation">
+        <strong>Result Set</strong> = SELECT FROM <code>courses</code> with current filters and sorting.
+    </p>
+    <p><strong>SQL Preview:</strong></p>
+    <pre>{{ sql_preview }}</pre>
+    <p><strong>Bound Parameters:</strong> {{ bound_params }}</p>
+</section>
+
+<section class="panel">
+    <h3>Results ({{ courses|length }})</h3>
+    {% if courses %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Course #</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Credits</th>
+                    <th>Semester</th>
+                    <th>Mini</th>
+                    <th>FCE</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in courses %}
+                    <tr>
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.course_number }}</td>
+                        <td>{{ c.course_name }}</td>
+                        <td>{{ c.department }}</td>
+                        <td>{{ c.credits }}</td>
+                        <td>{{ c.semester_offered }}</td>
+                        <td>{{ c.mini_course }}</td>
+                        <td>{{ c.fce_hours if c.fce_hours is not none else "N/A" }}</td>
+                        <td class="actions-inline action-cell">
+                            <a href="{{ url_for('edit_course', course_id=c.id) }}">Update</a>
+                            <button type="button" class="link-button danger-link" onclick="toggleDeleteConfirm({{ c.id }}, event)">Delete</button>
+                            <span id="delete-confirm-{{ c.id }}" class="floating-confirm hidden">
+                                <form method="post" action="{{ url_for('remove_course', course_id=c.id) }}" class="inline-form preserve-scroll-form">
+                                    <input type="hidden" name="confirm_delete" value="Y">
+                                    <button type="submit" class="confirm-btn">Confirm</button>
+                                    <button type="button" class="cancel-btn" onclick="closeDeleteConfirm({{ c.id }})">Cancel</button>
+                                </form>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr class="description-row">
+                        <td colspan="9">
+                            <strong>Description:</strong>
+                            {{ c.description if c.description else "(no description)" }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No matching courses found.</p>
+    {% endif %}
+</section>
+
+<script>
+function closeAllDeletePopovers() {
+    document.querySelectorAll("[id^='delete-confirm-']").forEach((el) => {
+        el.classList.add("hidden");
+    });
+}
+
+function toggleDeleteConfirm(courseId, event) {
+    if (event) event.stopPropagation();
+    const popup = document.getElementById(`delete-confirm-${courseId}`);
+    if (!popup) return;
+
+    const willOpen = popup.classList.contains("hidden");
+    closeAllDeletePopovers();
+    if (willOpen) popup.classList.remove("hidden");
+}
+
+function closeDeleteConfirm(courseId) {
+    const popup = document.getElementById(`delete-confirm-${courseId}`);
+    if (popup) popup.classList.add("hidden");
+}
+
+function toggleResetConfirm(event) {
+    if (event) event.stopPropagation();
+    const resetPopup = document.getElementById("reset-confirm-popover");
+    if (!resetPopup) return;
+    resetPopup.classList.toggle("hidden");
+}
+
+function closeResetConfirm() {
+    const resetPopup = document.getElementById("reset-confirm-popover");
+    if (resetPopup) resetPopup.classList.add("hidden");
+}
+
+document.addEventListener("click", () => {
+    closeAllDeletePopovers();
+    closeResetConfirm();
+});
+
+document.querySelectorAll(".floating-confirm").forEach((el) => {
+    el.addEventListener("click", (e) => e.stopPropagation());
+});
+
+const SCROLL_KEY = "course_catalog_scroll_y";
+document.querySelectorAll(".preserve-scroll-form").forEach((form) => {
+    form.addEventListener("submit", () => {
+        sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+    });
+});
+
+window.addEventListener("load", () => {
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved !== null) {
+        const y = parseInt(saved, 10);
+        if (!Number.isNaN(y)) {
+            window.scrollTo(0, y);
+        }
+        sessionStorage.removeItem(SCROLL_KEY);
+    }
+});
+</script>
+{% endblock %}

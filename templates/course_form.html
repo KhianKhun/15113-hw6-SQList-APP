@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+    <h2>{{ title }}</h2>
+    <p>{{ "Create a new course record." if mode == "create" else "Edit this course record." }}</p>
+
+    {% if errors %}
+        <div class="flash error">
+            <strong>Please fix:</strong>
+            <ul>
+                {% for err in errors %}
+                    <li>{{ err }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if mode == "create" %}
+        <form method="post" action="{{ action_url }}" id="multi-create-form">
+            <div id="entry-list">
+                {% for entry in entries %}
+                    <div class="entry-card">
+                        <div class="entry-title">Course Entry {{ loop.index }}</div>
+                        <div class="form-grid">
+                            <label>Course Number
+                                <input type="text" name="course_number[]" value="{{ entry.get('course_number', '') }}">
+                            </label>
+
+                            <label>Course Name
+                                <input type="text" name="course_name[]" value="{{ entry.get('course_name', '') }}">
+                            </label>
+
+                            <label>Department
+                                <input type="text" name="department[]" value="{{ entry.get('department', '') }}">
+                            </label>
+
+                            <label>Credits
+                                <input type="number" name="credits[]" value="{{ entry.get('credits', '') }}">
+                            </label>
+
+                            <label>Semester Offered
+                                <select name="semester_offered[]">
+                                    <option value="">Select semester</option>
+                                    {% for semester in valid_semesters %}
+                                        <option value="{{ semester }}" {% if entry.get('semester_offered', '') == semester %}selected{% endif %}>
+                                            {{ semester }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+
+                            <label>Mini Course
+                                <select name="mini_course[]">
+                                    <option value="">Select Y/N</option>
+                                    <option value="Y" {% if entry.get('mini_course', '') == 'Y' %}selected{% endif %}>Y</option>
+                                    <option value="N" {% if entry.get('mini_course', '') == 'N' %}selected{% endif %}>N</option>
+                                </select>
+                            </label>
+
+                            <label class="full-width">Description
+                                <textarea name="description[]" rows="3">{{ entry.get('description', '') }}</textarea>
+                            </label>
+
+                            <label>FCE Hours
+                                <input type="text" name="fce_hours[]" value="{{ entry.get('fce_hours', '') }}" placeholder="e.g., 10.5">
+                            </label>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="actions create-actions">
+                <button type="button" id="add-more-btn" class="button-muted">Add More Data</button>
+                <button type="submit">Create Course(s)</button>
+                <a class="button-muted" href="{{ url_for('read_courses') }}">Cancel</a>
+            </div>
+        </form>
+
+        <template id="entry-template">
+            <div class="entry-card">
+                <div class="entry-title">Course Entry __INDEX__</div>
+                <div class="form-grid">
+                    <label>Course Number
+                        <input type="text" name="course_number[]">
+                    </label>
+                    <label>Course Name
+                        <input type="text" name="course_name[]">
+                    </label>
+                    <label>Department
+                        <input type="text" name="department[]">
+                    </label>
+                    <label>Credits
+                        <input type="number" name="credits[]">
+                    </label>
+                    <label>Semester Offered
+                        <select name="semester_offered[]">
+                            <option value="">Select semester</option>
+                            {% for semester in valid_semesters %}
+                                <option value="{{ semester }}">{{ semester }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label>Mini Course
+                        <select name="mini_course[]">
+                            <option value="">Select Y/N</option>
+                            <option value="Y">Y</option>
+                            <option value="N">N</option>
+                        </select>
+                    </label>
+                    <label class="full-width">Description
+                        <textarea name="description[]" rows="3"></textarea>
+                    </label>
+                    <label>FCE Hours
+                        <input type="text" name="fce_hours[]" placeholder="e.g., 10.5">
+                    </label>
+                </div>
+            </div>
+        </template>
+    {% else %}
+        <form method="post" action="{{ action_url }}" class="form-grid">
+            <label>Course Number
+                <input type="text" name="course_number" value="{{ form_data.get('course_number', '') }}" required>
+            </label>
+
+            <label>Course Name
+                <input type="text" name="course_name" value="{{ form_data.get('course_name', '') }}" required>
+            </label>
+
+            <label>Department
+                <input type="text" name="department" value="{{ form_data.get('department', '') }}" required>
+            </label>
+
+            <label>Credits
+                <input type="number" name="credits" value="{{ form_data.get('credits', '') }}" required>
+            </label>
+
+            <label>Semester Offered
+                <select name="semester_offered" required>
+                    <option value="">Select semester</option>
+                    {% for semester in valid_semesters %}
+                        <option value="{{ semester }}" {% if form_data.get('semester_offered', '') == semester %}selected{% endif %}>
+                            {{ semester }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>Mini Course
+                <select name="mini_course" required>
+                    <option value="">Select Y/N</option>
+                    <option value="Y" {% if form_data.get('mini_course', '') == 'Y' %}selected{% endif %}>Y</option>
+                    <option value="N" {% if form_data.get('mini_course', '') == 'N' %}selected{% endif %}>N</option>
+                </select>
+            </label>
+
+            <label class="full-width">Description
+                <textarea name="description" rows="4">{{ form_data.get('description', '') }}</textarea>
+            </label>
+
+            <label>FCE Hours
+                <input type="text" name="fce_hours" value="{{ form_data.get('fce_hours', '') }}" placeholder="e.g., 10.5">
+            </label>
+
+            <div class="actions">
+                <button type="submit">Save Changes</button>
+                <a class="button-muted" href="{{ url_for('read_courses') }}">Cancel</a>
+            </div>
+        </form>
+    {% endif %}
+</section>
+
+{% if mode == "create" %}
+<script>
+const addMoreBtn = document.getElementById("add-more-btn");
+const entryList = document.getElementById("entry-list");
+const entryTemplate = document.getElementById("entry-template");
+
+if (addMoreBtn && entryList && entryTemplate) {
+    addMoreBtn.addEventListener("click", () => {
+        const nextIndex = entryList.querySelectorAll(".entry-card").length + 1;
+        const html = entryTemplate.innerHTML.replace("__INDEX__", String(nextIndex));
+        entryList.insertAdjacentHTML("beforeend", html);
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

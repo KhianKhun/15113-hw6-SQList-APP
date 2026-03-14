@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Course Catalog</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <h1>Course Catalog</h1>
+            <nav class="nav-blocks">
+                <a class="nav-btn {% if request.endpoint == 'read_courses' %}active{% endif %}" href="{{ url_for('read_courses') }}">Read</a>
+                <a class="nav-btn {% if request.endpoint in ['create_course', 'edit_course'] %}active{% endif %}" href="{{ url_for('create_course') }}">Create</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <section class="flash-stack">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

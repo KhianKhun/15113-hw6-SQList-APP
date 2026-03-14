@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+    <h2>Delete Course #{{ course.id }}</h2>
+    <p>This action removes the record from the database.</p>
+
+    <div class="delete-box">
+        <p><strong>Course Number:</strong> {{ course.course_number }}</p>
+        <p><strong>Course Name:</strong> {{ course.course_name }}</p>
+        <p><strong>Department:</strong> {{ course.department }}</p>
+        <p><strong>Semester:</strong> {{ course.semester_offered }}</p>
+    </div>
+
+    <form method="post" action="{{ url_for('remove_course', course_id=course.id) }}" class="actions">
+        <input type="hidden" name="confirm_delete" value="Y">
+        <button type="submit" class="danger">Yes, Delete</button>
+        <a class="button-muted" href="{{ url_for('read_courses') }}">Cancel</a>
+    </form>
+</section>
+{% endblock %}
